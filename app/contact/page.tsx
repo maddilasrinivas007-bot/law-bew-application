@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import emailjs from "@emailjs/browser";
+import { FiCheckCircle, FiAlertCircle, FiLoader } from "react-icons/fi";
 
 interface ContactFormValues {
   name: string;
   email: string;
   phone: string;
+  subject: string;
   message: string;
 }
 
@@ -16,22 +18,44 @@ const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "temp
 const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "";
 
 export default function ContactPage() {
-  const { register, handleSubmit, reset } = useForm<ContactFormValues>();
-  const [status, setStatus] = useState<string | null>(null);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormValues>({
+    mode: "onChange",
+    defaultValues: { name: "", email: "", phone: "", subject: "", message: "" }
+  });
+  const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (data: ContactFormValues) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setStatus({ type: null, message: "" });
+
     try {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        from_name: data.name,
-        from_email: data.email,
-        phone: data.phone,
-        message: data.message
-      }, EMAILJS_PUBLIC_KEY);
-      setStatus("Your message has been sent successfully. We will reply shortly.");
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name: data.name,
+          from_email: data.email,
+          phone: data.phone,
+          subject: data.subject,
+          message: data.message
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      setStatus({ 
+        type: "success", 
+        message: "✓ Message sent successfully! We will contact you within 24 hours." 
+      });
       reset();
     } catch (error) {
-      setStatus("Unable to send message at the moment. Please contact us directly by phone or email.");
+      setStatus({ 
+        type: "error", 
+        message: "✗ Unable to send message. Please call us directly: +91 85559 12093" 
+      });
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -68,34 +92,83 @@ export default function ContactPage() {
             <p className="text-sm uppercase tracking-[0.3em] text-gold">Reach Us</p>
             <h2 className="mt-4 text-3xl font-semibold text-white">Send a message and we will contact you promptly.</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-              <input
-                type="text"
-                placeholder="Your Name"
-                {...register("name", { required: true })}
-                className="w-full rounded-3xl border border-white/10 bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold"
-              />
-              <input
-                type="email"
-                placeholder="Your Email"
-                {...register("email", { required: true })}
-                className="w-full rounded-3xl border border-white/10 bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold"
-              />
-              <input
-                type="tel"
-                placeholder="Your Phone"
-                {...register("phone", { required: true })}
-                className="w-full rounded-3xl border border-white/10 bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold"
-              />
-              <textarea
-                placeholder="How can we help you?"
-                rows={6}
-                {...register("message", { required: true })}
-                className="w-full rounded-3xl border border-white/10 bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold"
-              />
-              <button type="submit" className="inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-4 text-sm font-semibold text-black transition hover:brightness-95">
-                Send Message
+              <div>
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  {...register("name", { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } })}
+                  className={`w-full rounded-3xl border ${errors.name ? "border-red-500" : "border-white/10"} bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold`}
+                />
+                {errors.name && <p className="mt-2 text-xs text-red-400">{errors.name.message}</p>}
+              </div>
+              <div>
+                <input
+                  type="email"
+                  placeholder="Your Email"
+                  {...register("email", { 
+                    required: "Email is required",
+                    pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email address" }
+                  })}
+                  className={`w-full rounded-3xl border ${errors.email ? "border-red-500" : "border-white/10"} bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold`}
+                />
+                {errors.email && <p className="mt-2 text-xs text-red-400">{errors.email.message}</p>}
+              </div>
+              <div>
+                <input
+                  type="tel"
+                  placeholder="Your Phone"
+                  {...register("phone", { 
+                    required: "Phone is required",
+                    pattern: { value: /^[0-9]{10}$|^[+][0-9]{1,3}[0-9]{7,}$/, message: "Invalid phone number" }
+                  })}
+                  className={`w-full rounded-3xl border ${errors.phone ? "border-red-500" : "border-white/10"} bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold`}
+                />
+                {errors.phone && <p className="mt-2 text-xs text-red-400">{errors.phone.message}</p>}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Subject of Inquiry"
+                  {...register("subject", { required: "Subject is required" })}
+                  className={`w-full rounded-3xl border ${errors.subject ? "border-red-500" : "border-white/10"} bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold`}
+                />
+                {errors.subject && <p className="mt-2 text-xs text-red-400">{errors.subject.message}</p>}
+              </div>
+              <div>
+                <textarea
+                  placeholder="How can we help you?"
+                  rows={6}
+                  {...register("message", { 
+                    required: "Message is required",
+                    minLength: { value: 10, message: "Message must be at least 10 characters" }
+                  })}
+                  className={`w-full rounded-3xl border ${errors.message ? "border-red-500" : "border-white/10"} bg-black/60 px-5 py-4 text-white outline-none transition focus:border-gold`}
+                />
+                {errors.message && <p className="mt-2 text-xs text-red-400">{errors.message.message}</p>}
+              </div>
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-6 py-4 text-sm font-semibold text-black transition hover:brightness-95 disabled:brightness-75"
+              >
+                {isSubmitting ? (
+                  <>
+                    <FiLoader className="h-4 w-4 animate-spin" /> Sending...
+                  </>
+                ) : (
+                  "Send Message"
+                )}
               </button>
-              {status ? <p className="text-sm text-white/80">{status}</p> : null}
+              {status.type && (
+                <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${
+                  status.type === "success" 
+                    ? "border-green-500/30 bg-green-500/10 text-green-400" 
+                    : "border-red-500/30 bg-red-500/10 text-red-400"
+                }`}>
+                  {status.type === "success" ? <FiCheckCircle className="h-5 w-5 flex-shrink-0" /> : <FiAlertCircle className="h-5 w-5 flex-shrink-0" />}
+                  <p>{status.message}</p>
+                </div>
+              )}
             </form>
           </div>
         </div>

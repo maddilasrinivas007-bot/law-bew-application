@@ -37,7 +37,7 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(0,0,0,0.45),_rgba(17,17,17,0.82))]" />
           <div className="absolute inset-0">
-            <Image src="/front-image.avif" alt="Elegant law background" fill className="object-cover" />
+            <Image src="/hero-image.avif" alt="Elegant law background" fill className="object-cover" />
           </div>
         </div>
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[1.2fr_auto] lg:items-center lg:px-8">
@@ -77,7 +77,7 @@ export default function Home() {
           </div>
           <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/10 p-4 shadow-glow">
             <div className="relative h-[520px] w-full overflow-hidden rounded-[1.75rem]">
-              <Image src="/law1.jpg" alt="Professional advocate portrait" fill className="object-cover" priority />
+              <Image src="/advocate-photo.jpg" alt="Professional advocate portrait" fill className="object-cover" priority />
             </div>
           </div>
         </div>
